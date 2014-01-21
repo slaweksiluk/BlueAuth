@@ -1,0 +1,21 @@
+from bluetooth import *
+import bluetooth
+bd_addr = "8c:71:f8:99:f0:73"
+
+port = 9
+
+sock=bluetooth.BluetoothSocket( bluetooth.RFCOMM )
+print "sock created"
+
+
+sock.connect((bd_addr, port))
+print "connected"
+
+
+#data = sock.recv(1024)
+#print "received [%s]" % data
+
+sock.send("hello!!")
+print "message sent"
+
+#sock.close()
