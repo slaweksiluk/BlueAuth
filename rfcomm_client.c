@@ -1,5 +1,5 @@
 //Example 3-3. rfcomm-client.c
-//gcc rfcomm_client.c -o rfcomm_client -lbluetooth
+//gcc rfcomm_client.c -o rfcomm_client  -lbluetooth
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -7,7 +7,8 @@
 #include <bluetooth/rfcomm.h>
 
 
-int main(int argc, char **argv)
+/*int main(int argc, char **argv)*/
+int main()
 {
 	struct sockaddr_rc addr = { 0 };
 	int s, status;

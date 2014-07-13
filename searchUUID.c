@@ -10,13 +10,13 @@
 
 int main(int argc, char **argv)
 {
-uint32_t svc_uuid_int[] = { 0, 0, 0, 0xabcd };
+uint32_t svc_uuid_int[] = { 0, 0, 0, 0xdcba };
 int status;
 bdaddr_t target;
 uuid_t svc_uuid;
 sdp_list_t *response_list, *search_list, *attrid_list;
 sdp_session_t *session = 0;
-uint32_t range = 0xffffffff;
+uint32_t range = 0x0000ffff;
 uint8_t port = 0;
 if(argc < 2){
 	fprintf(stderr, "usage: %s <bt_addr>\n", argv[0]);
@@ -41,21 +41,20 @@ if( status == 0 ) {
 	fprintf(stderr, "debug1\n");
 	sdp_list_t *r = response_list;
 		// go through each of the service records
-		//for (; r; r = r->next ) {
+		for (; r; r = r->next ) {
 				fprintf(stderr,"debug2");
-			//r = r->next;
 				fprintf(stderr,"debug3");
-			sdp_record_t *rec = (sdp_record_t*) r->data;
+				sdp_record_t *rec = (sdp_record_t*) r->data;
 				fprintf(stderr,"debug4");
 			// get a list of the protocol sequences
 			if( sdp_get_access_protos( rec, &proto_list ) == 0 ) {
-				fprintf(stderr,"debug2");
+				fprintf(stderr,"debug5");
 				// get the RFCOMM port number
 				port = sdp_get_proto_port( proto_list, RFCOMM_UUID );
 				sdp_list_free( proto_list, 0 );
 			}
 		sdp_record_free( rec );
-		//}
+		}
 }
 sdp_list_free( response_list, 0 );
 sdp_list_free( search_list, 0 );
@@ -66,3 +65,4 @@ printf("found service running on RFCOMM port %d\n", port);
 }
 return 0;
 }
+
