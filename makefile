@@ -10,6 +10,8 @@ searchUUID:
 	gcc -o searchUUID searchUUID.c -lbluetooth
 simplescan:
 	gcc -o simplescan simplescan.c -lbluetooth
+rfcomm_client:
+	gcc -o rfcomm_client rfcomm_client.c -lbluetooth
 install: pam.so 
 	install -m 755 -o root -g root pam.so $(prefix)
 	install -m 755 -o root -g root pam.so $(prefix2)

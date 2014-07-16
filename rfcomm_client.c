@@ -5,16 +5,23 @@
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
+#include "simplescan.c"
 
 
 /*int main(int argc, char **argv)*/
 int main()
 {
+	int status;
+	char dest[18];
+	status = simplescan(dest);
+	if(status != 0) fprintf(stderr, "Unable to find phone with generated .jar installed and runned\n");
+	fprintf(stderr,"Btaddr: %s\n", dest);
+
 	struct sockaddr_rc addr = { 0 };
-	int s, status;
+	int s;
 	char buf[6] = {0};
 	char compare = "u";
-	char dest[18] = "8c:71:f8:99:f0:73";
+	//char dest[18] = "8c:71:f8:99:f0:73";
 	printf("allocate a socket\n");
 	s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	// set the connection parameters (who to connect to)

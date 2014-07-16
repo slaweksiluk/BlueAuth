@@ -5,14 +5,16 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
+#include <bluetooth/rfcomm.h>
+#include "searchUUID.c"
 //gcc -o simplescan simplescan.c -lbluetooth
-int main(int argc, char **argv)
+int simplescan(char *addr)
 {
     inquiry_info *ii = NULL;
     int max_rsp, num_rsp;
     int dev_id, sock, len, flags;
     int i;
-    char addr[19] = { 0 };
+    //char addr[18] = { 0 };
     char name[248] = { 0 };
 
     dev_id = hci_get_route(NULL);
@@ -37,9 +39,27 @@ int main(int argc, char **argv)
             name, 0) < 0)
         strcpy(name, "[unknown]");
         printf("%s  %s\n", addr, name);
-    }
 
+		if(searchUUID(addr) == 0){
+			printf("found bt device with proper UUID\n");
+			//char p = *addr;
+			//addr_ret = &p;
+    		free( ii );
+    		close( sock );
+			return 0;
+		}
+		else{
+			printf("NOT found bt device with proper UUID\n");
+			//&addr_ret = NULL;
+    		free( ii );
+    		close( sock );
+			return -1;
+		}
+
+    }
+	printf("not devices detcted\n");
+	//&addr_ret = NULL;
     free( ii );
     close( sock );
-    return 0;
+    return -2;
 }
