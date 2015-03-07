@@ -8,7 +8,7 @@ int main(void){
     long mtime, seconds, useconds;    
 
     int retcode;
-    char* user = "heniek";
+    const char* user = "heniek";
     char btaddr[18];
     int  port;
 	int  key_len;

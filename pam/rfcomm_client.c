@@ -22,19 +22,13 @@ int rfcomm_client(const char *dest, const int port, const int key_len, char *key
 	int status;
 	int s;
 	char key[key_len +1];
-
-	//char *c; 
-
 	char *c = (char*) malloc(sizeof(char));
 
-
-	printf("allocate a socket\n");
 	s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
-	// set the connection parameters (who to connect to)
 	addr.rc_family = AF_BLUETOOTH;
 	addr.rc_channel = (uint8_t) port;
 	str2ba( dest, &addr.rc_bdaddr );
-	printf("connect to server\n");
+	printf("rfcomm_client() establishing connection...\n");
 	status = connect(s, (struct sockaddr *)&addr, sizeof(addr));
 
 	// send a message
