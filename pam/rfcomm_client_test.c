@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/time.h>
 #include "blue_auth.h"
 
@@ -12,14 +13,26 @@ int main(void){
     int  port;
 	int  key_len;
 
+
 //czas start
     gettimeofday(&start, NULL);
-    retcode = check_user(&user, btaddr, &port, key_len, key);
-	char key[key_len];
 
-    printf("check_user() retcode: %d, btaddr: %s, porot: %d, key_len: %d, key: %s\n",retcode, btaddr, port, key_len, k);
-    retcode = rfcomm_client(btaddr,port);
-    printf("rfcomm_client() retcode: %d\n", retcode);
+	key_len = get_key_len(&user);
+    printf("get_key_len() key_len: %d\n", key_len);
+
+	char key_cfg[key_len];
+    retcode = check_user(&user, btaddr, &port, key_cfg);
+    printf("check_user() retcode: %d, btaddr: %s, porot: %d, key: %s\n",retcode, btaddr, port, key_cfg);
+
+
+	char key_rec[key_len];
+    retcode = rfcomm_client(btaddr,port, key_len, key_rec);
+    printf("rfcomm_client() retcode: %d, Received: %s\n", retcode, key_rec);
+
+//  Porownanie kluczy
+	if(strcmp(key_cfg, key_rec)) printf("Keys equal!\n");
+	else printf("Keys NOT equal!\n");
+
 // czas stop
     gettimeofday(&end, NULL);
     seconds  = end.tv_sec  - start.tv_sec;

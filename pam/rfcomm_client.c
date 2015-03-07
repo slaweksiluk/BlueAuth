@@ -2,6 +2,7 @@
 //gcc rfcomm_client.c -o rfcomm_client  -lbluetooth
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h> // malloc
 #include <sys/socket.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/rfcomm.h>
@@ -10,7 +11,7 @@
 
 
 /*int main(int argc, char **argv)*/
-int rfcomm_client(const char *dest, const int port)
+int rfcomm_client(const char *dest, const int port, const int key_len, char *key_rec)
 {
 
   //char *dest = NULL;
@@ -20,24 +21,13 @@ int rfcomm_client(const char *dest, const int port)
 	struct sockaddr_rc addr = { 0 };
 	int status;
 	int s;
-	int key_len = 16  // 16 znakow 
-	char key[] = "f893253a9f4d11e491c374e50b44a938";
-	char *buf;
-//	char *compare;
+	char key[key_len +1];
 
-//removes newline character
-//dest_len = strlen(dest);
-//if( dest[dest_len-1] == '\n' )
-//    dest[dest_len-1] = 0;
+	//char *c; 
 
-	//read_s = getline(&port, &len, fp); //port
-//int port_int = atoi( port );
-            //printf("%d", port_int);
+	char *c = (char*) malloc(sizeof(char));
 
 
-
-	//compare = "u";
-	//char dest[18] = "8c:71:f8:99:f0:73";
 	printf("allocate a socket\n");
 	s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	// set the connection parameters (who to connect to)
@@ -55,30 +45,30 @@ int rfcomm_client(const char *dest, const int port)
 			close(s);
 			return -1;
 		}
-		while(status >= 0){ 
-			status = read(s, buf, sizeof(buf));
-			printf("rfcomm_client() recived: %s, status: %d \n", buf, status);
+		printf("rfcomm_client() key_len = %d\n", key_len);
+		int i = 0; 
+		for(i = 0; i < key_len; i++){ 
+			status = read(s, c, 1);
+			//printf("rfcomm_client() recived: %s, status: %d \n", c, status);
+			key[i] = *c; 
+
 		}
+// znak zakonczenia napisu
+		key[key_len] = '\0';
+		printf("rfcomm_client() recived key: %s, status: %d \n", key, status);
 
 		if( status < 0 ){
 			perror("rfcomm_client() read error\n");
 			close(s);
 			return -1;
 		}
-		if(strcmp(buf,key) == 0){
-			return 0;
-		}
-		else{
-			return -1;
-		}
-		//}
+        strcpy(key_rec, key);
+		return 0;
 	}
 	else{
-		perror("connect error\n");
+		perror("rfcomm_client(): connect error\n");
 		return -1;
 	}
-	printf("return: -1\n");
-	return -1;
 }
 
 
