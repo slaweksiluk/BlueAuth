@@ -5,7 +5,7 @@
 
 #define sizearray(a)  (sizeof(a) / sizeof((a)[0]))
 
-int get_key_len(char **user){
+int get_key_len(const char **user){
     char section[50]; //nazwa sekcji
     char mobile[50]; //nazwa telefonu dla uzytkownika
 
@@ -32,7 +32,7 @@ return -1;
 }
 	
 
-int check_user(char **user, char* btaddr, int *port, char *key){
+int check_user(const char **user, char* btaddr, int *port, char *key){
 
     char section[50]; //nazwa sekcji
     char mobile[50]; //nazwa telefonu dla uzytkownika
