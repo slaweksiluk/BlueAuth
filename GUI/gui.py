@@ -11,10 +11,13 @@ import sys
 import bluetooth
 from bluetooth import *
 
+import os.path
 
 
 
 class mainWindow(Gtk.Window):
+#  Sciezka do katalogu z kluczami
+    KEYS_PATH = "../keys/"
     def __init__(self):
 # glowne okno
         print (sys.version)
@@ -225,7 +228,33 @@ class mainWindow(Gtk.Window):
 
 # tu trzeba znalesc telefon o okreslonym UUID
         uuid = model[tree_iter][2]
-        (btaddr, port) = serviceDiscProt.findPhone(uuid)
+        mobile = model[tree_iter][1]
+
+        try:
+            (btaddr, port) = serviceDiscProt.findPhone(uuid)
+        except ValueError as err:
+            print(err.args)
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Unable to find phone")
+            dialog.format_secondary_text("Unable to find phone with service UUID : " + str(uuid) + " Please chceck if its properly set.")
+            dialog.run()
+            dialog.destroy()
+            return None;
+
+#  Trzeba wygenerowac i wyslac klucz publiczny... Tylko jesli jest to pierwsze
+            #  uruchomienie Update Mobile. Bedzie to sprawdzane w konstruktorze
+            #  klasy crytpoRSA. Jesli plik keys/<mobile> istnieje znaczy ze
+            #  klucz jest juz okresolny. Trzeba tylko sprawdzic połączenie.
+            if not os.path.exists(KEYS_PATH + mobile):
+#  Trzeba:
+            #  1. wygenerowac klucze
+                key_len = 1024  # Minimum 1024 bity
+                cryptoRSA.generateKeys(key_len)
+            #  2. Wyslac do telefonu dl. klucza i sam klucz
+                sendKey()
+
+
+
+
 
 # jesli pole key jest puste to trzeba je wyslac do mobile
         key_s = "f893253a9f4d11e2"  # 16 znakow, na sztywno
@@ -239,6 +268,7 @@ class mainWindow(Gtk.Window):
         except BluetoothError as e:
             print "BT error: " + e.errno + e.strerror
             sock.close()
+
 # i zapisac te dane to listy
         model[tree_iter][3] = btaddr
         model[tree_iter][4] = str(port)
@@ -249,7 +279,42 @@ class mainWindow(Gtk.Window):
         cfgManage.saveMobiles(mobiles_liststore)
         cfgManage.saveUsers(users_liststore)
 
+    def sendKey(btaddr, port):
+        try:
+            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            sock.connect((btaddr, port))
+            sock.send("KEY1024") # klucz 1024bitowy
+            sock.close()
+            print "connTest(): Key Req sent"
 
+            data = ""
+            for i in range(1, KEY_CHARS+1):
+                ch = sock.recv(1)
+                data = data + ch
+            print "connTest():received [%s]" % data
+            sock.close()
+        except BluetoothError as e:
+            print "connTest(): BT error: " + e.errno + e.strerror
+            sock.close()
+
+
+    def connTest(btaddr, port):
+        try:
+            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            sock.connect((btaddr, port))
+            sock.send("KEY_REQ")
+            sock.close()
+            print "connTest(): Key Req sent"
+
+            data = ""
+            for i in range(1, KEY_CHARS+1):
+                ch = sock.recv(1)
+                data = data + ch
+            print "connTest():received [%s]" % data
+            sock.close()
+        except BluetoothError as e:
+            print "connTest(): BT error: " + e.errno + e.strerror
+            sock.close()
 
 mainWindow()
 Gtk.main()

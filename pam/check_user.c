@@ -2,8 +2,18 @@
 #include <string.h>
 #include "blue_auth.h"
 #include "../minini/minIni.h"
+#include <unistd.h>
+#include <stdbool.h>
 
 #define sizearray(a)  (sizeof(a) / sizeof((a)[0]))
+
+bool file_exists(const char *f){
+	if( access( f, F_OK ) != -1 ) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 int get_key_len(const char **user){
     char section[50]; //nazwa sekcji
@@ -13,22 +23,23 @@ int get_key_len(const char **user){
     int  s; //iterator sekcji
     int  b; // enabled, true/false
 
-      for (s = 0; ini_getsection(s, section, sizearray(section), inifile) > 0; s++) {
-        printf("    [%s] user: %s\n", section, *user);
-        if (!strcmp(*user, section)){
-            printf("user cfg exists\n");
-            b = ini_getbool(section, "enabled", 0, inifile);
-            if(b == 1){
-//pobierz nazwe telfonu przypisanego do uzytkownika
-                ini_gets(section, "mobile", "0", mobile, sizearray(mobile), inifile);
-//  pobierz dlugosc klucza i klucz
-                key_len = ini_getl(mobile, "key_len", 1, inifile_mobiles);
-                printf("get_key_len(): key length: %d\n", key_len);
-                return key_len;
-            }
-        }
-      } /* for */
-return -1;
+//  Szukaj uzytkownikow
+	for (s = 0; ini_getsection(s, section, sizearray(section), inifile_users) > 0; s++) {
+		printf("get_key_len() [%s] user: %s\n", section, *user);
+		if (!strcmp(*user, section)){
+			printf("user cfg exists\n");
+			b = ini_getbool(section, "enabled", 0, inifile_users);
+			if(b == 1){
+			//pobierz nazwe telfonu przypisanego do uzytkownika
+				ini_gets(section, "mobile", "0", mobile, sizearray(mobile), inifile_users);
+			//  pobierz dlugosc klucza i klucz
+				key_len = ini_getl(mobile, "key_len", 1, inifile_mobiles);
+				printf("get_key_len(): key length: %d\n", key_len);
+				return key_len;
+			}
+		}
+	} /* for */
+	return -1;
 }
 	
 
@@ -44,16 +55,16 @@ int check_user(const char **user, char* btaddr, int *port, char *key){
     int  p;
     //char user_login[] = *user;
 
-      for (s = 0; ini_getsection(s, section, sizearray(section), inifile) > 0; s++) {
+      for (s = 0; ini_getsection(s, section, sizearray(section), inifile_users) > 0; s++) {
         //printf("    [%s] user: %s\n", section, *user);
 
         if (!strcmp(*user, section)){
             printf("user cfg exists\n");
 
-            b = ini_getbool(section, "enabled", 0, inifile);
+            b = ini_getbool(section, "enabled", 0, inifile_users);
             if(b == 1){
 //pobierz nazwe telfonu przypisanego do uzytkownika
-                ini_gets(section, "mobile", "0", mobile, sizearray(mobile), inifile);
+                ini_gets(section, "mobile", "0", mobile, sizearray(mobile), inifile_users);
 //pobierrz btaddr i port telefonu o ww nazwie
                 ini_gets(mobile, "btaddr", "999", addr, sizearray(addr),
                  inifile_mobiles);
