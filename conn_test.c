@@ -60,8 +60,19 @@ int findConn(int s, int dev_id, long arg) {
 }
 #endif
 
-int hci_rssi(char *address) {
-#if defined(LINUX) || defined(__linux__)
+
+void *measure_rssi(void *parm){
+    int rc;
+    rssi_t *rssi_st = parm;
+    int i=0;
+    float rssi_sum=0;
+    
+
+    char *address = rssi_st->addr;
+//  Domyslnie
+    rssi_st->supported = false;
+    rssi_st->rssi = -1;
+//  Skopiowane z hci_rssi()
 	struct hci_conn_info_req *cr;
 	int8_t rssi;
 	int dd, dev_id;
@@ -73,23 +84,27 @@ int hci_rssi(char *address) {
 	dev_id = hci_for_each_dev(HCI_UP, findConn, (long)&bdaddr);
 	if (dev_id < 0) {
 		if (error) {
-			return E_HCI_BT_ERROR;
+			rc = E_HCI_BT_ERROR;
+		    pthread_exit(NULL);
 		}
 		else {
-			return E_HCI_BT_NOT_CONNECTED;
+		    rc = E_HCI_BT_NOT_CONNECTED;
+	        pthread_exit(NULL);
 		}
 	}
 
 	dd = hci_open_dev(dev_id);
 	if (dd < 0) {
 		perror("Could not open HCI device");
-		return E_HCI_BT_ERROR;
+		rc = E_HCI_BT_ERROR;
+	    pthread_exit(NULL);
 	}
 
 	if ((cr = malloc(sizeof(struct hci_conn_info_req) + sizeof(struct hci_conn_info))) == NULL) {
 		perror("malloc");
 		hci_close_dev(dd);
-		return E_HCI_BT_ERROR;
+		rc = E_HCI_BT_ERROR;
+	    pthread_exit(NULL);
 	}
 
 	bacpy(&cr->bdaddr, &bdaddr);
@@ -98,51 +113,37 @@ int hci_rssi(char *address) {
 		perror("Could not get connection info");
 		free(cr);
 		hci_close_dev(dd);
-		return E_HCI_BT_ERROR;
+	    rc = E_HCI_BT_ERROR;
+        pthread_exit(NULL);
 	}
-
-	if (hci_read_rssi(dd, htobs(cr->conn_info->handle), &rssi, 1000) < 0) {
-		perror("Could not read RSSI");
-		free(cr);
-		hci_close_dev(dd);
-		return E_HCI_BT_ERROR;
-	}
-
-	free(cr);
-	hci_close_dev(dd);
-	
-	return rssi;
-#else
-    return BLUE_NOT_SUPPORTED;
-#endif
-}
-
-
-    
-void *measure_rssi(void *parm){
-    int rc;
-    rssi_t *rssi_st = parm;
-    int i=0;
-    float rssi=0;
-    
+//  Do zapisu pomiarow...
+    FILE *f = fopen("rssi_samples.dat", "wt");
     while(true){
-        rc = hci_rssi(rssi_st->addr);
-        if(rc < 0) break;
-        rssi += rc;
-        i++;
+        rc = hci_read_rssi(dd, htobs(cr->conn_info->handle), &rssi, 1000);
+    	if(rc < 0) break;
+        rssi_sum += rssi;
+	    fprintf(f, "%d\n", rssi);
+        i++;	
     }
+    fclose(f);
+
     
     if((rc == E_HCI_BT_NOT_CONNECTED) || (rssi_st->stop)){
+        perror("HCI_ERROR");
         print_error(rc);
         rssi_st->supported = true;
-        rssi_st->rssi = (rssi/i);
+        rssi_st->rssi = (rssi_sum/i);
         printf("Mean RSSI value: %f\n, with %d iters\n", rssi_st->rssi, i);
 
     } else{
+        perror("HCI_ERROR");
         print_error(rc);
         rssi_st->supported = false;
         rssi_st->rssi = -1;
     }
+    
+	free(cr);
+	hci_close_dev(dd);    
     pthread_exit(NULL);
 }
   
@@ -242,7 +243,8 @@ int main(){
 		}
 		
 //  Odbierz wiadomosc conf/non_conf
-        if((rc = get_msg(cnt_msg, s, msg_len))) {
+        rc = get_msg(cnt_msg, s, msg_len);
+        if(rc < 0){
             print_error(rc);
             return rc;
         }   	
@@ -289,12 +291,15 @@ int main(){
 	
 		printf("rfcomm_client() something to receive... \n");  
         //  Odbierz rezultat
-        if((rc = get_msg(cnt_msg, s, msg_len))){
+        rc = get_msg(cnt_msg, s, msg_len);
+        if(rc < 0){
+            printf("\nget_msg err\n");
             print_error(rc);
             return rc; 
         }
 			  
-        if(strcmp(cnt_msg, "AUT_PERM")){
+        if(!strcmp(cnt_msg, "AUT_PERM")){
+
             //  Odbierz klucz
             if((rc = get_msg(key, s, key_len))){
                 print_error(rc);
@@ -302,7 +307,7 @@ int main(){
                 return rc;
             }	
 		    close(s);        
-        } else if(strcmp(cnt_msg, "AUT_DENY")){
+        } else if(!strcmp(cnt_msg, "AUT_DENY")){
             print_error(E_RECEIVED_AUTH_DENY);
             close(s);
             return E_RECEIVED_AUTH_DENY;
