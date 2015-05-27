@@ -1,3 +1,4 @@
+
 prefix=/lib/security
 
 
@@ -7,6 +8,24 @@ HDRS = ../minini/minIni.h blue_auth.h
 # Add -I to the dir the curl include files are in
 CFLAGS = -Wall
 
+
+# Objects used in crypto fnctions
+CRYPTO_OBJS = crypto_engine.o base64.o
+CRYPTO_FLAGS = -lcrypto -lssl
+# Headers used in crypto_engine
+
+
+crypto_engine_test: $(CRYPTO_OBJS) crypto_engine_test.o $(HDRS) 
+	gcc $(CFLAGS) $(CRYPTO_OBJS) crypto_engine_test.o -o crypto_engine_test $(CRYPTO_FLAGS)
+
+crypto_engine_test.o: crypto_engine_test.c
+	gcc $(CFLAGS) -c crypto_engine_test.c 
+	
+crypto_engine.o: crypto_engine.c
+	gcc $(CFLAGS) -c crypto_engine.c $(CRYPTO_FLAGS)
+	
+base64.o: base64.c
+	gcc $(CFLAGS) -c base64.c $(CRYPTO_FLAGS)
 
 rfcomm_client_test: $(OBJS) rfcomm_client_test.o $(HDRS) 
 	gcc $(CFLAGS) -o rfcomm_client_test $(OBJS) rfcomm_client_test.o -lbluetooth -lm

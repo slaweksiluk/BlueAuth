@@ -243,7 +243,7 @@ class mainWindow(Gtk.Window):
 #  Trzeba wygenerowac i wyslac klucz publiczny... Tylko jesli jest to pierwsze
             #  uruchomienie Update Mobile. Bedzie to sprawdzane w konstruktorze
             #  klasy crytpoRSA. Jesli plik keys/<mobile> istnieje znaczy ze
-            #  klucz jest juz okresolny. Trzeba tylko sprawdzic połączenie.
+            #  klucz jest juz okresolny. Trzeba tylko sprawdzic polaczenie.
             if not os.path.exists(KEYS_PATH + mobile):
 #  Trzeba:
             #  1. wygenerowac klucze

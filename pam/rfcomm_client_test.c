@@ -12,6 +12,8 @@ int main(void){
     char btaddr[18];
     int  port;
 	int  key_len;
+	
+	print_error(E_BT_COMM_SUCCESS);
 
 
 //czas start

@@ -8,11 +8,23 @@ int rfcomm_client(const char *dest, const int port, const int key_len, char *key
 int get_key_len(const char **user);
 bool file_exists(const char *f);
 
+//  crypto_engine.c 
+unsigned char* decrypt(char *ct, char* priv_key_dir);
+unsigned char* calc_hash(unsigned char* mess1, int mess1_len);
+
+//  base64.c
+int Base64Decode(char* b64message, unsigned char** buffer, size_t* length);
+int Base64Encode(const unsigned char* buffer, size_t length, char** b64text);
+
 // constants
+static const int key_len = 1024;
+static const int session_id_len = 8;
+static const int key_id_len = 8;
 static const char inifile_users[] = "/etc/blueAuth/users.conf";
 static const char inifile_mobiles[] = "/etc/blueAuth/mobiles.conf";
 //const static int MSG_LEN = 8;
 const static bool FIXED = true;
+
 
 //  Error codes
 //typedef enum {
@@ -35,13 +47,19 @@ typedef enum _config_error
     E_RECEIVED_AUTH_DENY = -10,
     E_BT_COMM_SUCCESS = 0,
     E_BT_CONNECT_ERR = -11,
+    
+
+//  Crypto errors off 20
+    E_PRIV_KEY_FILE = -20,
+    E_DECRYPT_ERR = -21,
+    
 } error_t;
 
 /* type to provide in your API */
 //typedef _config_error error_t;
 
 /* use this to provide a perror style method to help consumers out */
-struct _errordesc {
+static struct _errordesc {
     int  code;
     char *message;
 } errordesc[] = {
@@ -57,10 +75,13 @@ struct _errordesc {
     { E_USR_RES_TIME_OUT, "Mobile auth confirmation time exceed"},
     { E_RECEIVED_AUTH_DENY, "Auth deny message received form mobile"},
     { E_BT_CONNECT_ERR, "Unable to connect to mobile"},
+//  Crypto errors
+    { E_PRIV_KEY_FILE, "Unable to read private key pem file"},
+    { E_DECRYPT_ERR, "Unable to get possible decrypt length"},
 };
 
 //  Printing errors
-void print_error(int ecode){
+static inline void print_error(int ecode){
     printf("Error code: %d. %s\n", ecode, errordesc[ecode*(-1)].message);
 }
 

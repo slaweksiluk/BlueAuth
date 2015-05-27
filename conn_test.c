@@ -14,7 +14,7 @@
 #include "pam/blue_auth.h"
 
 
-
+//  head -c 8 /dev/urandom | base64
 // This is not really thread-safe
 bool error;
 
@@ -66,7 +66,7 @@ void *measure_rssi(void *parm){
     rssi_t *rssi_st = parm;
     int i=0;
     float rssi_sum=0;
-    
+  
 
     char *address = rssi_st->addr;
 //  Domyslnie
@@ -148,10 +148,10 @@ void *measure_rssi(void *parm){
 }
   
 
-int send_msg(char *msg, int s){
+int send_msg(char *msg, int s, int msg_len){
     int status;
     printf("send_msg() sending: %s\n", msg);
-	status = write(s, msg, 8);
+	status = write(s, msg, msg_len);
 	if( status < 0 ) {
 		close(s);
 		return E_BT_SEND_ERR;
@@ -211,6 +211,8 @@ int main(){
 	int msg_len = 8;
 	char cnt_msg[msg_len+1];
 	
+	char *session_id = "6j7ehX7Dilo=";
+	int session_id_len = 12;
 	//int data = 0x01;
 
 	s = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
@@ -237,7 +239,14 @@ int main(){
 
 //  Wyslij wiadomosc sterujaca
 	if( status == 0 ) {
-		if((rc = send_msg("KEY_REQU",s))){
+	    rc = send_msg("KEY_REQU",s);
+		if(rc<0){
+		    print_error(rc);
+		    return rc;
+		}
+//  Wyslij token sesji
+	    rc = send_msg(session_id, s, session_id_len);
+		if(rc<0){
 		    print_error(rc);
 		    return rc;
 		}
@@ -248,9 +257,7 @@ int main(){
             print_error(rc);
             return rc;
         }   	
-//
-//  Otrzymano non conf,
-//
+
         if(!strcmp(cnt_msg,"NON_CONF")){
             CONFIRM = false;
         } else if(!strcmp(cnt_msg,"USR_CONF")){
@@ -262,7 +269,6 @@ int main(){
             return E_UNKNOWN_CONTROL_MSG;
         }
         
-
 		while(!count){
 		    if(CONFIRM){
 	            sleep(2);
@@ -306,7 +312,10 @@ int main(){
                 close(s);
                 return rc;
             }	
-		    close(s);        
+            rssi_st.stop = true;
+            close(s);
+            pthread_join(rssi_th, NULL);
+            
         } else if(!strcmp(cnt_msg, "AUT_DENY")){
             print_error(E_RECEIVED_AUTH_DENY);
             close(s);

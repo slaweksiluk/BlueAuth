@@ -21,8 +21,6 @@ def getMobilesValues():
                         config.get(u, "port"))
         allMobilesValues.append(mobileValues)
     return allMobilesValues
-    
-def get
 
 
 def getList():
