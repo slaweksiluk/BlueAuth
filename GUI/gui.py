@@ -3,21 +3,30 @@
 from gi.repository import Gtk
 #import Gtk
 import serviceDiscProt
+import BTfunctions
+import CryptoEngine
 import cfgManage
 import addUserWin
-import manageJAR
 import windows
 import sys
 import bluetooth
 from bluetooth import *
-
 import os.path
+import string
+import random
+import hashlib
+import time
+import base64
 
 
 
 class mainWindow(Gtk.Window):
 #  Sciezka do katalogu z kluczami
+    CONS_UUID = "f893253a-9f4d-11e4-91c3-74e5"
     KEYS_PATH = "../keys/"
+
+    MSG_LEN = 8;
+
     def __init__(self):
 # glowne okno
         print (sys.version)
@@ -213,13 +222,42 @@ class mainWindow(Gtk.Window):
     def on_Add_mobile_clicked(self, widget, liststore):
 # urucuchominie skryptu do wygenerowania pliku JAR z UUID i wyswietlenie
 # okna z prosba o zapisanie ytego pliku w dowolnym miejscu
-        uuid = manageJAR.createJAR()
-        entry = windows.entryWindow(self, "Enter your mobile name",
+# Wygeneruj 4 cyfrowy numer do utworzenia UUID w telfonie
+
+#        uuid_part = ''.join(random.choice("0123456789abcdef") for _ in range(4))
+#        serviceDiscProt.findMobile(uuid_part)
+#
+#        dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
+#            Gtk.ButtonsType.CANCEL, "Please pass this numer to mobile")
+#        dialog.format_secondary_text(uuid_part)
+#        dialog.run()
+#        print("INFO dialog closed")
+
+#        dialog.destroy()
+
+# Lepiej bedzie generowac UUID na telefonie i przepisac jego czesc do komputera
+        uuid_suffix = windows.entryWindow(self, "Enter id presented by mobile",
                                     "Add mobile")
+        (btaddr, port) = serviceDiscProt.findPhone(mainWindow.CONS_UUID + uuid_suffix)
+        # uuid = manageJAR.createJAR()
+
+        # Znaleziono telefon, trzbeba wygenrowac pare kluczy
+        pubKey = CryptoEngie.genKeys(KEYS_PATH + "pub.pem",
+                                     KEYS_PATH + "priv.pem")
+
+
+        # Popros uzywkonika o nazwe telefonu
+        entry = windows.entryWindow(self, "Phone found! Enter its name",
+                                    "Add mobile")
+
+
+
 # dopoki nie polaczenie z telefonem nie zostanie zrealizowane i
 # nie zosanie pobrany btaddr i port sa puste i telefon jest domyslni
 # wylaczony
         liststore.append((entry, False, uuid, None, None))
+
+
 
     def on_update_mobile_clicked(self, widget, tree_selection):
         result = ()
@@ -297,6 +335,24 @@ class mainWindow(Gtk.Window):
             print "connTest(): BT error: " + e.errno + e.strerror
             sock.close()
 
+    def sendMsg(btaddr, port, msg):
+        try:
+            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+            sock.connect((btaddr, port))
+            sock.send(msg) # klucz 1024bitowy
+            sock.close()
+            print "connTest(): AUTH_REQ sent"
+
+            data = ""
+            for i in range(1, KEY_CHARS+1):
+                ch = sock.recv(1)
+                data = data + ch
+            print "connTest():received [%s]" % data
+            sock.close()
+        except BluetoothError as e:
+            print "connTest(): BT error: " + e.errno + e.strerror
+            sock.close()
+
 
     def connTest(btaddr, port):
         try:
@@ -316,5 +372,49 @@ class mainWindow(Gtk.Window):
             print "connTest(): BT error: " + e.errno + e.strerror
             sock.close()
 
-mainWindow()
-Gtk.main()
+def configureMobile(addr, port, uuid_suf, pub_key, sessionID_B64, priv_key_dir):
+    if addr == None:
+        (addr, port) = BTfunctions.findPhone(mainWindow.CONS_UUID +
+            uuid_suf)
+    BTfunctions.sendPubKey(addr, port, pub_key)
+
+    # Odczekaj 3 s...
+    print "sleep 10s..."
+    time.sleep(10)
+    ct = BTfunctions.receiveCipherText(addr, port, sessionID_B64)
+    decrypted = CryptoEngine.decryptRSA(ct, priv_key_dir, True, True)
+
+    rec_sessionID = decrypted[0:7]
+    if base64encode(rec_sessionID) != sessionID_B64:
+        print "ERROR: diffrents sesion IDs!"
+        return None
+    rec_keyID = decrypted[8:39]
+
+    key_id_hash_b64 = base64.b64encode(hashlib.sha512(rec_keyID))
+    print "Hashed key id: "
+    print key_id_hash_b64
+    return key_id_hash_b64
+
+
+pub_dir = "../keys/pub.pem"
+pub_file = open(pub_dir, 'r')
+pub_key = pub_file.read()
+pub_file.close()
+pub_key_temp = pub_key.replace("-----BEGIN PUBLIC KEY-----\n", "")
+pub_key_to_send = pub_key_temp.replace("-----END PUBLIC KEY-----", "").rstrip()
+
+print "pub key:"
+print pub_key_to_send
+print "end pub key"
+
+sessionID_B64 = "mEqdOVZNd8Y="
+priv_key_dir = "../keys/priv.pem"
+
+addr = "8C:71:F8:99:F0:73"
+port = 8
+
+configureMobile(addr, port, "0b44a938", pub_key_to_send, sessionID_B64, priv_key_dir)
+#configureMobile2("8C:71:F8:99:F0:73", 8, sessionID_B64, priv_key_dir)
+
+#mainWindow()
+#Gtk.main()

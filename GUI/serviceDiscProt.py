@@ -1,19 +1,39 @@
 import sys
 from bluetooth import *
 
+
+
+# Odszukaj telefon z uuuid konczacym sie na
+def findMobile(uuid_suf):
+    print "Looking for a moble with UUID suffix: " + uuid_suf
+
+#    nearby_devices = discover_devices()
+#    for bdaddr in nearby_devices:
+
+
+    services = find_service()
+
+    if len(services) > 0:
+        print("found  services on %s" % (len(services)))
+    else:
+        print("no services found")
+
+    for svc in services:
+        print("Service Name: %s"    % svc["name"])
+        print("    Host:        %s" % svc["host"])
+        print("    Description: %s" % svc["description"])
+        print("    Provided By: %s" % svc["provider"])
+        print("    Protocol:    %s" % svc["protocol"])
+        print("    channel/PSM: %s" % svc["port"])
+        print("    svc classes: %s "% svc["service-classes"])
+        print("    profiles:    %s "% svc["profiles"])
+        print("    service id:  %s "% svc["service-id"])
+        print()
+
 def findPhone(uuid):
 
-#f = open('/etc/blueAuth.conf', 'r+')
-#print f
-#uuid  = f.readline()
-#uuid  = f.readline()
-#uuid = uuid.rstrip()
-    print uuid
-
-
-#uuid = "95cb7094-0a7c-11e4-b95c-485b391c6106"
-    service_matches = find_service( uuid = uuid )
-
+    print("Looking for mobile with UUID: %s") % uuid
+    service_matches = find_service(uuid=uuid)
     if len(service_matches) == 0:
             raise ValueError('findPhone() error: cannot find mobile with UUID ', uuid)
             return None
@@ -22,8 +42,7 @@ def findPhone(uuid):
     port = first_match["port"]
     name = first_match["name"]
     host = first_match["host"]
-    print "connecting to ", host, name, port
-
+    print("Found mobile %s. BlueAuth service addr %s, port %d") % name % host % port
     return (host, port)
 
 def listDev():
