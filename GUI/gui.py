@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 from gi.repository import Gtk
-#import Gtk
-import serviceDiscProt
 import BTfunctions
 import CryptoEngine
 import cfgManage
@@ -10,22 +8,35 @@ import addUserWin
 import windows
 import sys
 import bluetooth
-from bluetooth import *
 import os.path
-import string
-import random
-import hashlib
-import time
 import base64
+import configuration
 
+# Dbg
+DBG = True
+DBG_FIXED_ADDR_PORT = False
+FIXED_ADDR = "grewg"
+FIXED_PORT = 8
+DBG_FIXED_PUBKEY = True
+DBG_FIXED_PUBKEY_DIR = "../etc/BlueAuth/keys/pub.pem"
+DBG_FIXED_SESSIONID = True
+FIXED_SESSIONID = "mEqdOVZNd8Y="
+
+# Stala czesc UUID
+CONS_UUID = "f893253a-9f4d-11e4-91c3-74e5"
+# Dlugosc id sesji
+SESSION_ID_LEN_BYTES = 8
+
+# Sciezka z kluczami prywatnymi
+PRIV_PATH = "../etc/BlueAuth/keys/"
+PRIV_KEY_FILE_EXT = ".pem"
+# Sciezka do skrotow
+HASH_PATH = "../etc/BlueAuth/hashes/"
 
 
 class mainWindow(Gtk.Window):
-#  Sciezka do katalogu z kluczami
-    CONS_UUID = "f893253a-9f4d-11e4-91c3-74e5"
-    KEYS_PATH = "../keys/"
+    MSG_LEN = 8
 
-    MSG_LEN = 8;
 
     def __init__(self):
 # glowne okno
@@ -33,7 +44,7 @@ class mainWindow(Gtk.Window):
         Gtk.Window.__init__(self, title="Settings")
         window = Gtk.Window()
         #window.set_default_size(200, 200)
-        window.set_border_width(10)
+        #window.set_border_width(10)
 
 # okno dodaj uzytkownika
         addUserWin = Gtk.Window()
@@ -148,21 +159,23 @@ class mainWindow(Gtk.Window):
         button6.connect("clicked", self.on_Save_config_clicked, liststore2,
                         liststore)
 
-# box dla przycikow pod users i mobiles
-        usersButtonsBox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                                  spacing=6)
-        usersButtonsBox.pack_start(button1, True, True, 0)
-        usersButtonsBox.pack_start(button2, True, True, 0)
 
-        mobilesButtonsBox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                                    spacing=6)
-        mobilesButtonsBox.pack_start(button3, True, True, 0)
-        mobilesButtonsBox.pack_start(button4, True, True, 0)
-        mobilesButtonsBox.pack_start(button5, True, True, 0)
-        mobilesButtonsBox.pack_start(button6, True, True, 0)
+# box dla przycikow pod users i mobiles
+        #usersButtonsBox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+        #                          spacing=6)
+        usersButtonsBox = Gtk.Box()
+        usersButtonsBox.pack_start(button1, False, False, 0)
+        usersButtonsBox.pack_start(button2, False, False, 0)
+
+        mobilesButtonsBox = Gtk.Box()
+        mobilesButtonsBox.pack_start(button3, False, False, 0)
+        mobilesButtonsBox.pack_start(button4, False, False, 0)
+        mobilesButtonsBox.pack_start(button5, False, False, 0)
+        mobilesButtonsBox.pack_start(button6, False, False, 0)
 
 # szkielet
-        grid = Gtk.Table(3, 2, False)
+        grid = Gtk.Table(2, 2, False)
+        grid.set_col_spacing(0, 5)
         grid.attach(treeview, 0, 1, 0, 1)
         grid.attach(usersButtonsBox, 0, 1, 1, 2)
         #grid.attach(button2, 0, 1, 2, 3)
@@ -170,6 +183,7 @@ class mainWindow(Gtk.Window):
         grid.attach(treeview2, 1, 2, 0, 1)
         grid.attach(mobilesButtonsBox, 1, 2, 1, 2)
         #grid.attach(button4, 1, 2, 2, 3)
+
 
         window.add(grid)
         #window.add(treeview)
@@ -184,7 +198,7 @@ class mainWindow(Gtk.Window):
 
 # funkcja do oblusgi ptaszka dla mobiles
     def cell_toggled_mobiles(self, widget, path, store):
-        if (store[path][3] == None) or (store[path][4] == None):
+        if (store[path][3] is None) or (store[path][4] is None):
             itr = store.get_iter(path)
             val = store.get_value(itr, 0)
             dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
@@ -220,44 +234,71 @@ class mainWindow(Gtk.Window):
 
 # dodanie telefonu
     def on_Add_mobile_clicked(self, widget, liststore):
-# urucuchominie skryptu do wygenerowania pliku JAR z UUID i wyswietlenie
-# okna z prosba o zapisanie ytego pliku w dowolnym miejscu
-# Wygeneruj 4 cyfrowy numer do utworzenia UUID w telfonie
-
-#        uuid_part = ''.join(random.choice("0123456789abcdef") for _ in range(4))
-#        serviceDiscProt.findMobile(uuid_part)
-#
-#        dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
-#            Gtk.ButtonsType.CANCEL, "Please pass this numer to mobile")
-#        dialog.format_secondary_text(uuid_part)
-#        dialog.run()
-#        print("INFO dialog closed")
-
-#        dialog.destroy()
-
-# Lepiej bedzie generowac UUID na telefonie i przepisac jego czesc do komputera
+        # Popros uzywkonika o nazwe telefonu
+        new_mobile_id = windows.entryWindow(self, "Enter your mobile name: ",
+                                    "Add mobile")
+        # Popros uzytwkonika o fragment UUID z telefonu
         uuid_suffix = windows.entryWindow(self, "Enter id presented by mobile",
                                     "Add mobile")
-        (btaddr, port) = serviceDiscProt.findPhone(mainWindow.CONS_UUID + uuid_suffix)
-        # uuid = manageJAR.createJAR()
 
-        # Znaleziono telefon, trzbeba wygenrowac pare kluczy
-        pubKey = CryptoEngie.genKeys(KEYS_PATH + "pub.pem",
-                                     KEYS_PATH + "priv.pem")
+        # Znajdz telefon
+        if DBG_FIXED_ADDR_PORT is True:
+            addr = FIXED_ADDR
+            port = FIXED_PORT
+        else:
+            (addr, port) = BTfunctions.findPhone(CONS_UUID + uuid_suffix)
 
+        # Sciezka do klucza prywatnego
+        priv_file_dir = PRIV_PATH + new_mobile_id + PRIV_KEY_FILE_EXT
 
-        # Popros uzywkonika o nazwe telefonu
-        entry = windows.entryWindow(self, "Phone found! Enter its name",
-                                    "Add mobile")
+        # Generowanie kluczy
+        if DBG_FIXED_PUBKEY is True:
+            pub_file = open(DBG_FIXED_PUBKEY_DIR, 'r')
+            pubkey = pub_file.read()
+            pub_file.close()
+        else:
+            # Wygeneruj pare kluczy
+            pubkey = CryptoEngine.genKeys(DBG_FIXED_PUBKEY_DIR, priv_file_dir)
 
+        # Usun z klucza poczatek i koniec
+        pubkey_to_send = configuration.preparePublicKey(pubkey)
+        # Wyslij do telfonu klucz publiczny
+        BTfunctions.sendPubKey(addr, port, pubkey_to_send)
 
+        # Identyfiatkator sessjii
+        if DBG_FIXED_SESSIONID is True:
+            sessionID = FIXED_SESSIONID
+        else:
+            sessionID = base64.b64encode(os.urandom(SESSION_ID_LEN_BYTES))
+
+        # Okno z posba o ustawnowienie hasla na telefonie
+        dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
+            Gtk.ButtonsType.OK, "Add mobile")
+        dialog.format_secondary_text(
+            "Please set password in mobile device")
+
+        while(True):
+            # Wyswietl okno
+            dialog.run()
+            # Proba odebrabnia ct
+            ct = BTfunctions.receiveCipherText(addr, port, sessionID)
+            if ct is not None:
+                break
+        # Szyfrogram pobrany usun okno
+        dialog.destroy()
+
+        # Obrob odebrany szyfrogram
+        idkey_hash = configuration.processCipherText(ct, sessionID,
+                                                     priv_file_dir)
+        # Zapisz otrzymany skrot do pliku
+        hash_file = open(HASH_PATH + new_mobile_id, 'w')
+        hash_file.write(idkey_hash)
+        pub_file.close()
 
 # dopoki nie polaczenie z telefonem nie zostanie zrealizowane i
 # nie zosanie pobrany btaddr i port sa puste i telefon jest domyslni
 # wylaczony
-        liststore.append((entry, False, uuid, None, None))
-
-
+        liststore.append((new_mobile_id, False, uuid_suffix, addr, str(port)))
 
     def on_update_mobile_clicked(self, widget, tree_selection):
         result = ()
@@ -290,10 +331,6 @@ class mainWindow(Gtk.Window):
             #  2. Wyslac do telefonu dl. klucza i sam klucz
                 sendKey()
 
-
-
-
-
 # jesli pole key jest puste to trzeba je wyslac do mobile
         key_s = "f893253a9f4d11e2"  # 16 znakow, na sztywno
         try:
@@ -317,104 +354,5 @@ class mainWindow(Gtk.Window):
         cfgManage.saveMobiles(mobiles_liststore)
         cfgManage.saveUsers(users_liststore)
 
-    def sendKey(btaddr, port):
-        try:
-            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-            sock.connect((btaddr, port))
-            sock.send("KEY1024") # klucz 1024bitowy
-            sock.close()
-            print "connTest(): Key Req sent"
-
-            data = ""
-            for i in range(1, KEY_CHARS+1):
-                ch = sock.recv(1)
-                data = data + ch
-            print "connTest():received [%s]" % data
-            sock.close()
-        except BluetoothError as e:
-            print "connTest(): BT error: " + e.errno + e.strerror
-            sock.close()
-
-    def sendMsg(btaddr, port, msg):
-        try:
-            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-            sock.connect((btaddr, port))
-            sock.send(msg) # klucz 1024bitowy
-            sock.close()
-            print "connTest(): AUTH_REQ sent"
-
-            data = ""
-            for i in range(1, KEY_CHARS+1):
-                ch = sock.recv(1)
-                data = data + ch
-            print "connTest():received [%s]" % data
-            sock.close()
-        except BluetoothError as e:
-            print "connTest(): BT error: " + e.errno + e.strerror
-            sock.close()
-
-
-    def connTest(btaddr, port):
-        try:
-            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-            sock.connect((btaddr, port))
-            sock.send("KEY_REQ")
-            sock.close()
-            print "connTest(): Key Req sent"
-
-            data = ""
-            for i in range(1, KEY_CHARS+1):
-                ch = sock.recv(1)
-                data = data + ch
-            print "connTest():received [%s]" % data
-            sock.close()
-        except BluetoothError as e:
-            print "connTest(): BT error: " + e.errno + e.strerror
-            sock.close()
-
-def configureMobile(addr, port, uuid_suf, pub_key, sessionID_B64, priv_key_dir):
-    if addr == None:
-        (addr, port) = BTfunctions.findPhone(mainWindow.CONS_UUID +
-            uuid_suf)
-    BTfunctions.sendPubKey(addr, port, pub_key)
-
-    # Odczekaj 3 s...
-    print "sleep 10s..."
-    time.sleep(10)
-    ct = BTfunctions.receiveCipherText(addr, port, sessionID_B64)
-    decrypted = CryptoEngine.decryptRSA(ct, priv_key_dir, True, True)
-
-    rec_sessionID = decrypted[0:7]
-    if base64encode(rec_sessionID) != sessionID_B64:
-        print "ERROR: diffrents sesion IDs!"
-        return None
-    rec_keyID = decrypted[8:39]
-
-    key_id_hash_b64 = base64.b64encode(hashlib.sha512(rec_keyID))
-    print "Hashed key id: "
-    print key_id_hash_b64
-    return key_id_hash_b64
-
-
-pub_dir = "../keys/pub.pem"
-pub_file = open(pub_dir, 'r')
-pub_key = pub_file.read()
-pub_file.close()
-pub_key_temp = pub_key.replace("-----BEGIN PUBLIC KEY-----\n", "")
-pub_key_to_send = pub_key_temp.replace("-----END PUBLIC KEY-----", "").rstrip()
-
-print "pub key:"
-print pub_key_to_send
-print "end pub key"
-
-sessionID_B64 = "mEqdOVZNd8Y="
-priv_key_dir = "../keys/priv.pem"
-
-addr = "8C:71:F8:99:F0:73"
-port = 8
-
-configureMobile(addr, port, "0b44a938", pub_key_to_send, sessionID_B64, priv_key_dir)
-#configureMobile2("8C:71:F8:99:F0:73", 8, sessionID_B64, priv_key_dir)
-
-#mainWindow()
-#Gtk.main()
+mainWindow()
+Gtk.main()

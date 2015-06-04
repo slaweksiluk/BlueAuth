@@ -4,8 +4,8 @@
 #include <security/pam_modules.h> //moduły pam
 #include <syslog.h> // logi
 #include <security/pam_ext.h> // logi
-#include "blue_auth.h"
 #include <stdbool.h>
+#include "blue_auth.h"
 
 
 #ifndef LOG_IDENT
@@ -15,13 +15,13 @@
 
 
 PAM_EXTERN int
-pam_sm_authenticate(pam_handle_t *pamh, int flags, 	int argc, const char *argv[]){
+pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char *argv[]){
 	const char* pUsername; 
 	int retval; //zwracane przez pam
 	int status; // zwracane przez moje moudły 
 
-    char btaddr[18];
-    int  port;
+        char btaddr[18];
+        int  port;
 	bool dbg = false;
 
 //  Czy logowac do /var/log/auth.log? 

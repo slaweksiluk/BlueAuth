@@ -43,16 +43,23 @@ int get_key_len(const char **user){
 }
 	
 
-int check_user(const char **user, char* btaddr, int *port, char *key){
-
+// Wejscie:
+//      user - login
+// Wyjscia
+//      btaddr
+//      port
+//      mobile_id 
+//      rssi
+int get_user_data(const char **user, char* btaddr, int *port, char *mobile_id,
+        float *rssi){
     char section[50]; //nazwa sekcji
     char mobile[50]; //nazwa telefonu dla uzytkownika
     char addr[18];
 
-	int key_len; // dlogosc klucza z konfigu
     int  s; //iterator sekcji
     int  b; // enabled, true/false
-    int  p;
+    int  p; // port
+    float min_rssi; // rssi
     //char user_login[] = *user;
 
       for (s = 0; ini_getsection(s, section, sizearray(section), inifile_users) > 0; s++) {
@@ -69,22 +76,19 @@ int check_user(const char **user, char* btaddr, int *port, char *key){
                 ini_gets(mobile, "btaddr", "999", addr, sizearray(addr),
                  inifile_mobiles);
                 p = ini_getl(mobile, "port", 999, inifile_mobiles);
-//  pobierz  klucz
-                key_len = ini_getl(mobile, "key_len", 1, inifile_mobiles);
-				char k[key_len]; 
-                ini_gets(mobile, "key", "key_no_set", k, sizearray(k),
-                 inifile_mobiles);		
-
-                printf("check_user(): user %s enabled with mobile: %s\n", *user, mobile);
-                printf("check_user(): mobile btaddr: %s, port: %d\n", addr, p);
-                printf("check_user(): key length: %d, key: %s\n", key_len, k);
+//  pobierz wartosc progu RSSI
+                min_rssi = ini_getf(mobile, "min_rssi", "-5.0", inifile_users);
+                
+                printf("user %s enabled with mobile: %s\n", *user, mobile);
+                printf("mobile btaddr: %s, port: %d\n", addr, p);
+                printf("rssi threshold: %f\n", min_rssi);
+                //printf("check_user(): key length: %d, key: %s\n", key_len, k);
 
 //zapisz btaddr, port i klucz do adresow z argumetu
                 strcpy(btaddr,addr);
-				strcpy(key,k); //seg fault!
-				//key = k; 
+                strcpy(mobile_id, mobile);
                 *port = p;
-				
+                *rssi = min_rssi;
                 return 0;
             }
 
@@ -93,7 +97,7 @@ int check_user(const char **user, char* btaddr, int *port, char *key){
             //} /* for */
         }
       } /* for */
-return -1;
+return E_INI_FILE;
 }
 
 
