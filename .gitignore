@@ -1,8 +1,6 @@
 *~
 .*
 *.pyc
-GUI/gui
-GUI/trash
 *.jar
 TRASH
 *.txt
@@ -13,3 +11,9 @@ TRASH
 !*.py
 !*.h
 !Makefile
+!*/
+
+TRASH/*
+GUI/TRASH/*
+pam/TRASH/*
+nbproject/*

@@ -40,7 +40,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char *argv[])
 		return PAM_AUTHINFO_UNAVAIL;
 	}
 
-	retval = pam_get_user(pamh, &pUsername, NULL);
+	retval =  pam_get_user(pamh, &pUsername, NULL);
 	if (retval == PAM_SUCCESS){
 		if(dbg) pam_syslog(pamh, LOG_INFO, "pam_get_user() returned user: %s\n", pUsername);
 		int key_len = get_key_len(&pUsername);
