@@ -117,15 +117,15 @@ void *measure_rssi(void *parm){
         pthread_exit(NULL);
 	}
 //  Do zapisu pomiarow...
-    FILE *f = fopen("rssi_samples.dat", "wt");
+    //FILE *f = fopen("rssi_samples.dat", "wt");
     while(true){
         rc = hci_read_rssi(dd, htobs(cr->conn_info->handle), &rssi, 1000);
     	if(rc < 0) break;
         rssi_sum += rssi;
-	    fprintf(f, "%d\n", rssi);
+	    //fprintf(f, "%d\n", rssi);
         i++;	
     }
-    fclose(f);
+    //fclose(f);
 
     
     if((rc == E_HCI_BT_NOT_CONNECTED) || (rssi_st->stop)){
@@ -150,7 +150,7 @@ void *measure_rssi(void *parm){
 
 int send_msg(const char *msg, int s, int msg_len){
     int status;
-    printf("send_msg() sent: %s\n", msg);
+    printf("send_msg() sent: %.8s\n", msg);
 	status = write(s, msg, msg_len);
 	if( status < 0 ) {
 		close(s);
@@ -250,12 +250,14 @@ int rfcomm_client(const char *dest, const int port, char *rec_ct,
             return rc;
         }   	
 
+
         if(!strcmp(cnt_msg,"NON_CONF")){
             CONFIRM = false;
         } else if(!strcmp(cnt_msg,"USR_CONF")){
             CONFIRM = true;
 //  Odmierzaj czas
             gettimeofday(&start, NULL); 
+
         } else{
             print_error(E_UNKNOWN_CONTROL_MSG);
             return E_UNKNOWN_CONTROL_MSG;

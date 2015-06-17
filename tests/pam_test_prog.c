@@ -22,12 +22,14 @@ int main(int argc, char *argv[]) {
 		//retval = pam_authenticate(pamh, 0);
 		retval = pam_authenticate(pamh, 0);
 	}
-	else printf("Pam_test_prog: function pam_start() ERROR: %s\n", pam_strerror(pamh, retval));
+	else printf("Pam_test_prog: function pam_start() ERROR: %s\n", 
+	    pam_strerror(pamh, retval));
 
 	if (retval == PAM_SUCCESS) {
 		printf("Pam test prog: pam_authenticate - PAM_SUCCESS.\n");	
 	}
-	else printf("Pam_test_prog: function pam_authenticate() ERROR: %s\n", pam_strerror(pamh, retval));
+	else printf("Pam_test_prog: function pam_authenticate() ERROR: %s\n", 
+	    pam_strerror(pamh, retval));
 
 	if (pam_end(pamh, retval) != PAM_SUCCESS) {
 		pamh = NULL;

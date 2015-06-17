@@ -35,7 +35,3 @@ def processCipherText(ct, sessionID_B64, priv_key_dir):
     print key_id_hash_b64
     return key_id_hash_b64
 
-ct = "Ll/rBt684VpYd9ntm1To57AA1w4M7ykjio7mEGY6KLoRpXVoWD2L9pcWnqhG7vKbn7DtcJKHq0hvlvhJQ6yU33ilbornCRgvW5gdbVIjskjh2JhIIV+/J3pwhw+gmaxhzLAwlbqN1nmL3jYAQ9ZhQMvpDQKKof3+mzc6nYotlx8="
-sessionID = "mEqdOVZNd8Y="
-priv_file_dir = "../etc/BlueAuth/keys/wave.pem"
-processCipherText(ct, sessionID, priv_file_dir)

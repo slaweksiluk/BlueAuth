@@ -1,5 +1,7 @@
 // Test funkcji rfcomm_client() z modulu pam/bt_connection.c
-#include <sys/time.h>
+#include <sys/time.h> 
+
+
 #include "../pam/blue_auth.h"
 
 
@@ -8,8 +10,11 @@ int main(){
     struct timeval start, end;
     long mtime, seconds, useconds;    
     // Dane do polacznia
-    char *addr = "8C:71:F8:99:F0:73";
-    int port = 8;
+    //char *addr = "8C:71:F8:99:F0:73";
+    //int port = 8;
+    char *addr = "B4:52:7E:C0:EF:0C";
+    int port = 6;
+    
     // Przykladowy id sesjii
     char* sessionID = "6j7ehX7Dilo=";
     // Dopuszczalny czas odpowiedzi - 20s

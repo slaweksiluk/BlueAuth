@@ -11,6 +11,7 @@ TRASH
 !*.py
 !*.h
 !Makefile
+!.gitignore
 !*/
 
 TRASH/*

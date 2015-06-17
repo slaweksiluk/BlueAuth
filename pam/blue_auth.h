@@ -17,7 +17,7 @@ int rfcomm_client(const char *dest, const int port, char *rec_ct,
 unsigned char* decrypt(const char *ct, const char* priv_key_dir);
 unsigned char* calc_hash(unsigned char* mess1, int mess1_len);
 int verify_ciphertext(const char* ct, const char* priv_key_dir, 
-        const char* key_id_hash_dir, const char* session_id_b64);
+        const char* key_id_hash_dir, unsigned char* session_id);
 
 //  base64.c
 int Base64Decode(const char* b64message, unsigned char** buffer, size_t* length);
@@ -33,8 +33,10 @@ static const int HASH_LEN_BYTES = 64;
 static const int KEY_ID_LEN_BYTES = 32;
 static const int MSG_LEN_BYTES = 8;
 
-static const char inifile_users[] = "../etc/BlueAuth/users.conf";
-static const char inifile_mobiles[] = "../etc/BlueAuth/mobiles.conf";
+static const char inifile_users[] = "/home/slawek/Dokumenty/inz/src/etc/BlueAuth/users.conf";
+static const char inifile_mobiles[] = "/home/slawek/Dokumenty/inz/src/etc/BlueAuth/mobiles.conf";
+static const char HASHES_PATH[] = "/home/slawek/Dokumenty/inz/src/etc/BlueAuth/hashes/";
+static const char PRIV_KEYS_PATH[] = "/home/slawek/Dokumenty/inz/src/etc/BlueAuth/keys/";
 //const static int MSG_LEN = 8;
 const static bool FIXED = true;
 
@@ -97,6 +99,12 @@ static struct _errordesc {
 //  Printing errors
 static inline void print_error(int ecode){
     printf("Error code: %d. %s\n", ecode, errordesc[ecode*(-1)].message);
+}
+//  Returning errors
+static inline char* return_error(int ecode){
+    char* buf;
+    sprintf(buf, "Error code: %d. %s\n", ecode, errordesc[ecode*(-1)].message);
+    return buf;
 }
 
 

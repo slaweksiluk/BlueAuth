@@ -2,8 +2,8 @@
 
 import ConfigParser
 
-USERS_CFG_DIR = "../etc/BlueAuth/users.cfg"
-MOBILES_CFG_DIR = "../etc/BlueAuth/mobiles.cfg"
+USERS_CFG_DIR = "../etc/BlueAuth/users.conf"
+MOBILES_CFG_DIR = "../etc/BlueAuth/mobiles.conf"
 
 
 def getMobilesValues():

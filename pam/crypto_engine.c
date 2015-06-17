@@ -114,25 +114,26 @@ return md_value;
 
 
 int verify_ciphertext(const char* ct, const char* priv_key_dir, const char* key_id_hash_dir, 
-        const char* session_id_b64){
+        unsigned char* session_id){
     
-    unsigned char* session_id;
-    unsigned char *rec_key_id;
-    unsigned char *rec_hash;
+    //unsigned char *session_id = malloc(SESSION_ID_LEN_BYTES);
+    unsigned char *rec_key_id = malloc(KEY_ID_LEN_BYTES);
+    unsigned char *rec_hash = malloc(HASH_LEN_BYTES);
     
-    char hash_b64_buf[88];
-    unsigned char* hash = NULL;
+    char* hash_b64_buf = malloc(HASH_LEN_B64);
+    unsigned char* hash = malloc(HASH_LEN_BYTES);
     
-    unsigned char* decrypted;
+    unsigned char* decrypted = malloc(SESSION_ID_LEN_BYTES + KEY_ID_LEN_BYTES);
     int fp;
     
     size_t hash_decoded_len;
-    size_t session_id_decoded_len;
+    //size_t session_id_decoded_len;
 
     //  Zdekoduj id sesji z B64
     // printf("Decode session ID\n");
-    Base64Decode(session_id_b64, &session_id, &session_id_decoded_len);
-    printf("Session id decoded length: %d\n", (int)session_id_decoded_len);
+    //printf("verifyciphertext():  session id base 64 %s\n", session_id_b64);
+    //Base64Decode(session_id_b64, &session_id, &session_id_decoded_len);
+    //printf("Session id decoded length: %d\n", (int)session_id_decoded_len);
   
     //  Odczytaj plik i pobierz z niego skrót key ID
     fp = open(key_id_hash_dir, O_RDONLY);
@@ -140,6 +141,16 @@ int verify_ciphertext(const char* ct, const char* priv_key_dir, const char* key_
         return E_HASH_FILE;
     }
     read(fp, hash_b64_buf, (size_t) HASH_LEN_B64);
+    
+    printf("Hahs B64 : %s\n", hash_b64_buf);
+    printf("Hahs B64 len: %d\n", (int) strlen(hash_b64_buf));
+    
+    printf("Remove last char...\n");
+    hash_b64_buf[strlen(hash_b64_buf)-1] = 0;
+    printf("Hahs B64 : %s\n", hash_b64_buf);
+    printf("Hahs B64 len: %d\n", (int) strlen(hash_b64_buf));
+    
+    
     //  Zdekoduj skrót z b64
     //printf("Hash: %s\n", hash_b64_buf);
     Base64Decode(hash_b64_buf, &hash, &hash_decoded_len);

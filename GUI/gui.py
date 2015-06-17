@@ -17,8 +17,9 @@ DBG = True
 DBG_FIXED_ADDR_PORT = False
 FIXED_ADDR = "grewg"
 FIXED_PORT = 8
-DBG_FIXED_PUBKEY = True
+DBG_FIXED_RSA_KEYS = False
 DBG_FIXED_PUBKEY_DIR = "../etc/BlueAuth/keys/pub.pem"
+DBG_FIXED_PRIV_DIR = "../etc/BlueAuth/keys/priv.pem"
 DBG_FIXED_SESSIONID = True
 FIXED_SESSIONID = "mEqdOVZNd8Y="
 
@@ -248,14 +249,14 @@ class mainWindow(Gtk.Window):
         else:
             (addr, port) = BTfunctions.findPhone(CONS_UUID + uuid_suffix)
 
-        # Sciezka do klucza prywatnego
         priv_file_dir = PRIV_PATH + new_mobile_id + PRIV_KEY_FILE_EXT
 
         # Generowanie kluczy
-        if DBG_FIXED_PUBKEY is True:
+        if DBG_FIXED_RSA_KEYS is True:
             pub_file = open(DBG_FIXED_PUBKEY_DIR, 'r')
             pubkey = pub_file.read()
             pub_file.close()
+            priv_file_dir = DBG_FIXED_PRIV_DIR
         else:
             # Wygeneruj pare kluczy
             pubkey = CryptoEngine.genKeys(DBG_FIXED_PUBKEY_DIR, priv_file_dir)
@@ -293,7 +294,7 @@ class mainWindow(Gtk.Window):
         # Zapisz otrzymany skrot do pliku
         hash_file = open(HASH_PATH + new_mobile_id, 'w')
         hash_file.write(idkey_hash)
-        pub_file.close()
+        hash_file.close()
 
 # dopoki nie polaczenie z telefonem nie zostanie zrealizowane i
 # nie zosanie pobrany btaddr i port sa puste i telefon jest domyslni
@@ -301,7 +302,6 @@ class mainWindow(Gtk.Window):
         liststore.append((new_mobile_id, False, uuid_suffix, addr, str(port)))
 
     def on_update_mobile_clicked(self, widget, tree_selection):
-        result = ()
         (model, pathlist) = tree_selection.get_selected_rows()
         tree_iter = model.get_iter(pathlist)
 
@@ -310,44 +310,20 @@ class mainWindow(Gtk.Window):
         mobile = model[tree_iter][1]
 
         try:
-            (btaddr, port) = serviceDiscProt.findPhone(uuid)
+            (btaddr, port) = BTfunctions.findPhone(CONS_UUID + uuid)
         except ValueError as err:
             print(err.args)
-            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR, Gtk.ButtonsType.CANCEL, "Unable to find phone")
+            dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
+                                       Gtk.ButtonsType.CANCEL,
+                                       "Unable to find phone")
             dialog.format_secondary_text("Unable to find phone with service UUID : " + str(uuid) + " Please chceck if its properly set.")
             dialog.run()
             dialog.destroy()
             return None;
-
-#  Trzeba wygenerowac i wyslac klucz publiczny... Tylko jesli jest to pierwsze
-            #  uruchomienie Update Mobile. Bedzie to sprawdzane w konstruktorze
-            #  klasy crytpoRSA. Jesli plik keys/<mobile> istnieje znaczy ze
-            #  klucz jest juz okresolny. Trzeba tylko sprawdzic polaczenie.
-            if not os.path.exists(KEYS_PATH + mobile):
-#  Trzeba:
-            #  1. wygenerowac klucze
-                key_len = 1024  # Minimum 1024 bity
-                cryptoRSA.generateKeys(key_len)
-            #  2. Wyslac do telefonu dl. klucza i sam klucz
-                sendKey()
-
-# jesli pole key jest puste to trzeba je wyslac do mobile
-        key_s = "f893253a9f4d11e2"  # 16 znakow, na sztywno
-        try:
-            sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-            sock.connect((btaddr, port))
-            sock.send("KEY_128")
-            sock.send(key_s)
-            sock.close()
-            print "Key sent"
-        except BluetoothError as e:
-            print "BT error: " + e.errno + e.strerror
-            sock.close()
-
 # i zapisac te dane to listy
         model[tree_iter][3] = btaddr
         model[tree_iter][4] = str(port)
-        print "Adrr: " + str(btaddr) + " Port:" + str(port)
+        print "update Mobile returned Adrr: " + str(btaddr) + " Port:"+str(port)
 
     def on_Save_config_clicked(self, widget, mobiles_liststore,
                                users_liststore):
