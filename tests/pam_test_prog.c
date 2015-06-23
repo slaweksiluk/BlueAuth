@@ -2,6 +2,7 @@
 #include <security/pam_misc.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
 
 const struct pam_conv conv = {
 	misc_conv,
@@ -36,6 +37,5 @@ int main(int argc, char *argv[]) {
 		printf("Pam test prog:: failed to release authenticator\n");
 		exit(1);
 	}
-
 	return retval == PAM_SUCCESS ? 0 : 1;
 }

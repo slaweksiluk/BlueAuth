@@ -1,3 +1,7 @@
+/* These #defines must be present according to PAM documentation. */
+#define PAM_SM_AUTH
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,6 +11,14 @@
 #include <stdbool.h>
 #include <openssl/rand.h>
 #include "blue_auth.h"
+
+#ifndef PAM_EXTERN
+#ifdef PAM_STATIC
+#define PAM_EXTERN static
+#else
+#define PAM_EXTERN extern
+#endif
+#endif
 
 
 #ifndef LOG_IDENT
@@ -32,6 +44,7 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char *argv[])
         char* session_id_b64;
         int time_out = 60;
 	bool dbg = false;
+        bool verbose = true;
 
 //  Czy logowac do /var/log/auth.log? 
 	int i=0;
@@ -72,7 +85,11 @@ pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char *argv[])
 			if(dbg) pam_syslog(pamh, LOG_ERR, "rfcomm_client() returned err_code: %d \n", status);
 			return PAM_SERVICE_ERR;
 		}
-                if(dbg) pam_syslog(pamh, LOG_ERR, "Received cipher text: %s\n", ct);
+                if(dbg) pam_syslog(pamh, LOG_INFO, "Received cipher text: %s\n", ct);                
+                if(dbg) 
+                    pam_syslog(pamh, LOG_INFO, "Meausured rssi: %f\n", rssi_result);
+                if(verbose) fprintf(stderr, "Meausured rssi: %f\n", rssi_result);
+ 
 //  Oborobka szyfrogramu
                 char priv_key_dir[256];
                 snprintf(priv_key_dir, sizeof priv_key_dir, "%s%s%s", PRIV_KEYS_PATH, mobile_id, ".pem");
@@ -139,3 +156,18 @@ pam_sm_chauthtok(pam_handle_t *pamh, int flags,
 	return (PAM_IGNORE);
 }
 
+
+
+#ifdef PAM_STATIC
+
+struct pam_module _pam_blueAuth_modstruct = {
+  "pam_blueAuth",
+  pam_sm_authenticate,
+  pam_sm_setcred,
+  pam_sm_acct_mgmt,
+  pam_sm_open_session,
+  pam_sm_close_session,
+  pam_sm_chauthtok
+};
+
+#endif

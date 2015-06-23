@@ -13,7 +13,7 @@ int main(){
 //    printf("Sleep 1s...\n");
 //    usleep(1000);
     printf("Test det_user_interrupt(...)\n");
-    det_user_interrupt(5, 2, true);
+    det_user_interrupt(50, 3, true);
     
     return 0;
 }

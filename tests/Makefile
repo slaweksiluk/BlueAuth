@@ -5,7 +5,8 @@ prefix=/lib/security
 #OBJS = bt_connection.o bt_connection_test.o
 #HDRS = ../pam/blue_auth.h
 # Add -I to the dir the curl include files are in
-CFLAGS = -Wall -fPIC
+#CFLAGS = -Wall -fPIC
+CFLAGS = -Wall
 FLAGS = -lbluetooth -pthread -lcrypto -lssl
 
 

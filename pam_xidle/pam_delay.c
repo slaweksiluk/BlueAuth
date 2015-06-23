@@ -12,19 +12,20 @@
 #include<sys/time.h>
 #include<unistd.h>
 #include<stdbool.h>
-#include"xidle.h"
+#include"ext_fun.h"
 
 
 PAM_EXTERN int
 pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char *argv[]){
-    //const static int TIME_DIFF_MSECONDS = 0.5;
-    const static int SAMPLE_PERIOD = 5;
-    const static int DEBOUNCES = 2;
-    sleep(1);
-    if(det_user_interrupt(SAMPLE_PERIOD, DEBOUNCES, true) == -1){
-        pam_syslog(pamh, LOG_ERR, "ERROR display NULL");
+    printf("pam_delay started...\n");
+    pam_syslog(pamh, LOG_INFO, "pam_delay module, sleeping...");
+    int rc = sleep(3);
+    if(rc != 0){
+        pam_syslog(pamh, LOG_WARNING, "sleep cancelded, seconds left: %d", rc);
     }
-  pam_syslog(pamh, LOG_ERR, "ret success!");
+    pam_syslog(pamh, LOG_INFO, "calling ext fun...");
+    test_void_fun();
+    printf("pam_delay finished...\n");
   return PAM_SUCCESS;
 }
 
@@ -83,5 +84,6 @@ struct pam_module _pam_permit_modstruct = {
 };
 
 #endif
+
 
 

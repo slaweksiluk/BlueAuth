@@ -115,12 +115,14 @@ return md_value;
 
 int verify_ciphertext(const char* ct, const char* priv_key_dir, const char* key_id_hash_dir, 
         unsigned char* session_id){
-    
+	//index for
+	int i=0;
+
     //unsigned char *session_id = malloc(SESSION_ID_LEN_BYTES);
     unsigned char *rec_key_id = malloc(KEY_ID_LEN_BYTES);
     unsigned char *rec_hash = malloc(HASH_LEN_BYTES);
     
-    char* hash_b64_buf = malloc(HASH_LEN_B64);
+    char* hash_b64_buf = malloc(HASH_LEN_B64 + 1);
     unsigned char* hash = malloc(HASH_LEN_BYTES);
     
     unsigned char* decrypted = malloc(SESSION_ID_LEN_BYTES + KEY_ID_LEN_BYTES);
@@ -140,13 +142,21 @@ int verify_ciphertext(const char* ct, const char* priv_key_dir, const char* key_
     if(fp < 0){
         return E_HASH_FILE;
     }
-    read(fp, hash_b64_buf, (size_t) HASH_LEN_B64);
+    read(fp, hash_b64_buf, HASH_LEN_B64);
     
-    printf("Hahs B64 : %s\n", hash_b64_buf);
-    printf("Hahs B64 len: %d\n", (int) strlen(hash_b64_buf));
+    printf("Hash B64 : %s\n", hash_b64_buf);
+	int hash_b64_buf_len = (int) strlen(hash_b64_buf);
+    printf("Hahs B64 len: %d\n", hash_b64_buf_len);
     
-    printf("Remove last char...\n");
-    hash_b64_buf[strlen(hash_b64_buf)-1] = 0;
+    printf("Add NULL char to string...\n");
+    hash_b64_buf[HASH_LEN_B64] = '\0';
+
+	//int diff =  hash_b64_buf_len - HASH_LEN_B64;
+	//for(i=0; i<(diff + 1); i++){
+	//	fprintf(stderr, "rm index: %d\n", i);
+    //	hash_b64_buf[HASH_LEN_B64 + i] = 0;
+	//}
+    //hash_b64_buf[strlen(hash_b64_buf)-i] = 0;
     printf("Hahs B64 : %s\n", hash_b64_buf);
     printf("Hahs B64 len: %d\n", (int) strlen(hash_b64_buf));
     
@@ -163,7 +173,6 @@ int verify_ciphertext(const char* ct, const char* priv_key_dir, const char* key_
         print_error(E_DECRYPT_ERR);
   
     //printf("Compare session ID\n");
-    int i;
     for(i=0; i<8; i++){
         //  bajty session id
         if(decrypted[i] != session_id[i]){
@@ -174,8 +183,8 @@ int verify_ciphertext(const char* ct, const char* priv_key_dir, const char* key_
     printf("Comparing session IDs =>   ***OK***\n");
 
     //printf("Extract key ID from ct\n");
-    rec_key_id = malloc(8*32);
-    for(i=0; i<32; i++){
+    rec_key_id = malloc(KEY_ID_LEN_BYTES*sizeof(unsigned char));
+    for(i=0; i<KEY_ID_LEN_BYTES; i++){
         *(rec_key_id+i) = *(decrypted+i+8);
         //printf("i = %d => %02x\n",i, rec_key_id[i]);
     }

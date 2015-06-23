@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import bluetooth
 import socket
+import time
 
 MSG_LEN = 8
 CT_LEN = 172
@@ -17,10 +18,12 @@ def sendPubKey(btaddr, port, pubKey):
     try:
         sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
         sock.connect((btaddr, port))
-        sock.send("PUBL_KEY")
-        print "sent: PUBL_KEY"
-        sock.send(pubKey)
-        print "sent: " + pubKey
+        sock.setblocking(True)
+        bytes = sock.send("PUBL_KEY", socket.MSG_WAITALL)
+        print "sent bytes: " + str(bytes) 
+        bytes = sock.send(pubKey, socket.MSG_WAITALL)
+        print "sent bytes: " + str(bytes) 
+	time.sleep(1)
         sock.close()
     except bluetooth.BluetoothError as e:
         print "BT error: " + e.message

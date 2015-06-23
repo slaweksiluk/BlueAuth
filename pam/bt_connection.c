@@ -16,7 +16,7 @@
 
 //  head -c 8 /dev/urandom | base64
 // This is not really thread-safe
-bool error;
+// bool error;
 
 typedef struct {
     float rssi;
@@ -26,14 +26,13 @@ typedef struct {
 } rssi_t;
     
     
-#if defined(LINUX) || defined(__linux__)
 int findConn(int s, int dev_id, long arg) {
 	struct hci_conn_list_req *cl;
 	struct hci_conn_info *ci;
 	
 	if ((cl = malloc(HCI_MAX_DEV * sizeof(*ci) + sizeof(*cl))) == NULL) {
 		perror("malloc");
-		error = true;
+//		error = true;
 		return 0;
 	}
 	cl->dev_id = dev_id;
@@ -42,7 +41,7 @@ int findConn(int s, int dev_id, long arg) {
 
 	if (ioctl(s, HCIGETCONNLIST, (void *)cl)) {
 		perror("Could not get connection list");
-		error = true;
+//		error = true;
 		free(cl);
 		return 0;
 	}
@@ -58,10 +57,11 @@ int findConn(int s, int dev_id, long arg) {
 	free(cl);
 	return 0;
 }
-#endif
 
 
 void *measure_rssi(void *parm){
+    fprintf(stderr, "measure_rssi()   started...\n");
+
     int rc;
     rssi_t *rssi_st = parm;
     int i=0;
@@ -79,21 +79,27 @@ void *measure_rssi(void *parm){
 	
 	bdaddr_t bdaddr;
 	str2ba(address, &bdaddr);
-
-	error = false;
+        
+        fprintf(stderr, "measure_rssi()   calling hci for ...\n");
+	//error = false;
 	dev_id = hci_for_each_dev(HCI_UP, findConn, (long)&bdaddr);
+        fprintf(stderr, "measure_rssi()   dev id is %d\n", dev_id);
 	if (dev_id < 0) {
-		if (error) {
-			rc = E_HCI_BT_ERROR;
-		    pthread_exit(NULL);
-		}
-		else {
-		    rc = E_HCI_BT_NOT_CONNECTED;
-	        pthread_exit(NULL);
-		}
+//        if (error) {
+//			rc = E_HCI_BT_ERROR;
+//		    pthread_exit(NULL);
+//		}
+//		else {
+//		    rc = E_HCI_BT_NOT_CONNECTED;
+//	        pthread_exit(NULL);
+//		}
 	}
 
+
+        
+        
 	dd = hci_open_dev(dev_id);
+        fprintf(stderr, "measure_rssi()   dd is %d\n", dd);
 	if (dd < 0) {
 		perror("Could not open HCI device");
 		rc = E_HCI_BT_ERROR;
@@ -182,8 +188,7 @@ int get_msg(char *msg, int s, int msg_len){
 int rfcomm_client(const char *dest, const int port, char *rec_ct, 
         const char* session_id, const int max_delay, float* rssi_value){
     const static bool CHECK_RSSI = true;
-    
-    // ?
+
     bool CONFIRM;
     
     // return code
@@ -217,11 +222,13 @@ int rfcomm_client(const char *dest, const int port, char *rec_ct,
 
     printf("Establishing connection...\n");
     status = connect(s, (struct sockaddr *)&addr, sizeof(addr));
+    fprintf(stderr, "rfcomm_client()   socket is %d\n", s);
+
 //  Utworzono polaczanie. Mozna rozpoczac pomiar mocy sygnalu,
 //  jesli ma byc on przeprowadzony... trzeba utworzyc do tego watek
 //  argumet rssi to aktualna wartosc odczytu
     if(CHECK_RSSI){
-        //printf("In main: creating rssi thread\n");
+        fprintf(stderr, "rfcomm_client() creating rssi thread...\n");
         rc = pthread_create(&rssi_th, NULL, measure_rssi, &rssi_st);
         if (rc){
             printf("ERROR; return code from pthread_create() is %d\n", rc);
@@ -263,9 +270,9 @@ int rfcomm_client(const char *dest, const int port, char *rec_ct,
             return E_UNKNOWN_CONTROL_MSG;
         }
 
-                while(!count){
-                    if(CONFIRM){
-                    sleep(2);
+        while(!count){
+            if(CONFIRM){
+                sleep(1);
                 //  Sprawdz czy nie przekoroczny czas
                 gettimeofday(&end, NULL); 
                 seconds  = (end.tv_sec-start.tv_sec);         
@@ -303,7 +310,6 @@ int rfcomm_client(const char *dest, const int port, char *rec_ct,
             //  Odbierz szyfrogram
             if((rc = get_msg(ct, s, CIPHER_TEXT_LEN_B64))){
                 print_error(rc);
-                close(s);
                 return rc;
             }	
             rssi_st.stop = true;
