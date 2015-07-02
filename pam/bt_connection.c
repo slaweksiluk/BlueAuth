@@ -272,7 +272,6 @@ int rfcomm_client(const char *dest, const int port, char *rec_ct,
 
         while(!count){
             if(CONFIRM){
-                sleep(1);
                 //  Sprawdz czy nie przekoroczny czas
                 gettimeofday(&end, NULL); 
                 seconds  = (end.tv_sec-start.tv_sec);         
@@ -292,7 +291,8 @@ int rfcomm_client(const char *dest, const int port, char *rec_ct,
                     return E_USR_RES_TIME_OUT;
                 }
             }
-        //  Sprawdz czy jest cos do odebrania  
+        //  Sprawdz czy jest cos do odebrania
+        sleep(1);
         ioctl(s, FIONREAD, &count);
         }
 

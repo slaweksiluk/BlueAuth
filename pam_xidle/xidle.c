@@ -62,9 +62,6 @@ int det_user_interrupt(const int sample_period, const int debounces,
     return 0;
 }
 
-
-
-
 int GetIdleTime(Display *dpy, XScreenSaverInfo *info){
     XScreenSaverQueryInfo(dpy, DefaultRootWindow(dpy), info);
     return (int)info->idle;
